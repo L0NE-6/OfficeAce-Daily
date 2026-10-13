@@ -1,0 +1,26 @@
+name: OfficeAce Daily
+
+on:
+  # 定时签到留给 fork 后自行开启（取消下面两行注释即可）
+  # schedule:
+  #   - cron: '10 1 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: officeace-daily
+  cancel-in-progress: false
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run checkin
+        env:
+          OFFICEACE_TOKENS: ${{ secrets.OFFICEACE_TOKENS }}
+          QYWX_TOKEN: ${{ secrets.QYWX_TOKEN }}
+          PLUSPLUS_TOKEN: ${{ secrets.PLUSPLUS_TOKEN }}
+        run: python officeace_daily.py

@@ -1,0 +1,24 @@
+# ---- 运行时生成的凭据 / 状态：含真实 AK/SK，绝不提交 ----
+officeace_tokens.json
+officeace_result.json
+storage.json
+*accounts*.json
+
+# ---- 密钥 / 环境变量 ----
+.env
+.env.*
+*.pem
+*.key
+*.jks
+*.p12
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ---- 杂项 ----
+*.log
+*.bak
+.DS_Store
