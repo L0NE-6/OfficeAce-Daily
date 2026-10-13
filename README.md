@@ -43,6 +43,28 @@
 
 ---
 
+## 🔑 本机凭据读取工具
+
+桌面端登录后，配置就落在本机，不用手抄：
+
+```bash
+python officeace_get_token.py            # 读取并打印 OFFICEACE_BASE_URL / AK / SK
+python officeace_get_token.py --list     # 只列出找到的账号配置
+python officeace_get_token.py --json     # 机器可读输出
+python officeace_get_token.py --path <文件或目录>   # 指定位置
+```
+
+默认搜索 `~/.office-claw/.jiuwenclaw/config/routing_state/users/<账号ID>/models.json`，
+并自动兼容两种写法：`api_key` 直接是 `key:secret`，或凭据藏在 `custom_headers` 的 `Authorization: Basic …` 里。
+
+| 能取到 | 取不到 |
+| :--- | :--- |
+| ✅ `api_base`（网关基址） | ❌ 控制面临时 AK/SK/STS |
+| ✅ 网关 Basic 凭据（key/secret） | ❌ project_id |
+
+> 签到用的控制面凭据是 OAuth 换来的临时凭据、不在这份配置里，仍需从客户端/控制台另外导入（约 2 小时过期）。
+> 本工具解决的是「网关基址和 Basic 凭什么写」这一步。
+
 ## 🚀 快速开始
 
 ### 1. 配置环境变量（青龙）
