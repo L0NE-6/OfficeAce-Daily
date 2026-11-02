@@ -1,258 +1,294 @@
 <div align="center">
 
+<sub><strong>L0NE-6 · DAILY SIGNAL</strong></sub>
+
 # 🏢 OfficeAce Daily
 
-**果办（OfficeAce / OfficeClaw）每日签到脚本 · 单文件自包含 · V11 签名 · 多账号**
+**果办（OfficeAce / OfficeClaw）每日奖励领取工具，内置 V11-HMAC-SHA256 签名与领取前订阅 / claim 回执额度核对。**
 
-<img src="https://img.shields.io/badge/Python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white" />
-<img src="https://img.shields.io/badge/%E9%9D%92%E9%BE%99%E9%9D%A2%E6%9D%BF-%E5%8D%95%E6%96%87%E4%BB%B6%E8%BF%90%E8%A1%8C-4EAA25?style=flat-square" />
-<img src="https://img.shields.io/badge/GitHub%20Actions-%E6%94%AF%E6%8C%81-2088FF?style=flat-square&logo=githubactions&logoColor=white" />
-<img src="https://img.shields.io/badge/License-MIT-F472B6?style=flat-square" />
+[简体中文](README.md) · [English](docs/README.en.md) · [繁體中文](docs/README.zh-Hant.md) · [日本語](docs/README.ja.md) · [한국어](docs/README.ko.md) · [Português (BR)](docs/README.pt-BR.md)
+
+<img src="https://img.shields.io/github/v/release/L0NE-6/OfficeAce-Daily?style=for-the-badge&label=Release&color=2ea44f&logo=github" />
+<img src="https://img.shields.io/github/stars/L0NE-6/OfficeAce-Daily?style=for-the-badge&label=Stars&color=FFC75F&logo=github" />
+<img src="https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/%E9%9D%92%E9%BE%99-Qinglong-4EAA25?style=for-the-badge" />
+<img src="https://img.shields.io/badge/GitHub%20Actions-Supported-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" />
+<img src="https://img.shields.io/badge/License-MIT-F472B6?style=for-the-badge" />
+<a href="https://github.com/L0NE-6/OfficeAce-Daily/releases"><img src="https://img.shields.io/badge/%E2%AC%87%20Download-Releases-2ea44f?style=for-the-badge&logo=github" /></a>
+
+[✨ 30 秒速览](#-30-秒速览) · [🚀 青龙面板](#-青龙面板) · [☁️ GitHub Actions](#-github-actions) · [🔑 获取凭据](#-获取凭据) · [🔧 环境变量](#-环境变量) · [❓ 常见问题](#-常见问题) · [✦ 星轨](#-星轨-star-trail)
 
 </div>
 
 ---
 
-## ✨ 这是什么
+## ✨ 30 秒速览
 
-一个脚本领取果办（华为云 OfficeAce / OfficeClaw）的**每日奖励积分**：
+| 维度 | 说明 |
+| :--- | :--- |
+| **用途** | 领取果办（OfficeAce / OfficeClaw）当天可用的每日奖励与一次性新人礼。 |
+| **输入** | `OFFICEACE_TOKENS`，或 `OFFICEACE_AK` / `OFFICEACE_SK` / `OFFICEACE_STS` / `OFFICEACE_PROJECT_ID` / `OFFICEACE_BASE_URL` 单账号变量。 |
+| **输出** | 分账号领取结果、领取前订阅与 claim 回执的额度差值、奖励额度合计与可选企业微信 / PushPlus 推送。 |
+| **部署** | 青龙面板、GitHub Actions、Windows / Linux 本地运行。 |
+| **依赖** | Python 3.8+，仅使用标准库，无需安装第三方包。 |
+| **成功判据** | 领取前读取订阅，claim 回执返回最新奖励列表时按 `current_value` 实际增量报告；接口幂等时明确显示今日无可领奖励或已领过。 |
 
-```text
-读订阅（领取前）  GET  /v1/subscription                    ← V11-HMAC-SHA256 签名
-领取奖励          POST /v1/subscription/bonus/claim  body {}  ← 一次领当天全部
-读订阅（领取后）  GET  /v1/subscription                    ← 算增量，如实报数
-```
+## ✨ 核心能力
 
-- 🎯 **一次领完**：每日签到与一次性新人礼在服务端是**同一个动作**，一次调用把当天所有可领奖励发下来；
-- 🔁 **接口幂等**：一天一个活动只能领一次，重复领不报错（返回同一份列表），所以重复跑是安全的空动作；
-- 🔐 **V11-HMAC-SHA256 签名**：控制面接口按区域作用域 `cn-southwest-2/apic` 签名，官方 6 个签名向量逐字节对拍一致；
-- 📊 **如实报增量**：按 `current_value` 差值报「+N 积分」，读不到增量时说「已签到」，不编数字；
-- 👥 多账号、企业微信 / PushPlus 推送、日志脱敏。
+- **一次领取当天奖励**：每日签到与一次性新人礼由同一个 claim 动作下发。
+- **V11-HMAC-SHA256**：内置完整签名实现，按区域作用域 `cn-southwest-2/apic` 生成请求。
+- **领取对账**：先读 subscription，再 claim，用回执中的最新奖励列表计算实际增量。
+- **多账号**：`OFFICEACE_TOKENS` 支持换行或 `&` 分隔。
+- **只读核对**：`--query` 只查询订阅与奖励额度，不发起领取。
+- **单文件自包含**：青龙只需上传 `officeace_daily.py`。
+- **可选推送与日志脱敏**：支持企业微信、PushPlus，日志只显示 AK 的前后片段。
 
-> 📦 **单文件自包含**：`officeace_daily.py` 里内置了完整签名实现，青龙上传一个文件就能跑，不需要任何配套模块。
-> ⬇️ **不想用 git？** 直接到 **[Releases](https://github.com/L0NE-6/OfficeAce-Daily/releases)** 下载完整包 zip 或单个脚本，每个包都附 SHA256 校验值。
+## ⚠️ 凭据寿命
 
----
+控制面接口使用华为云临时 AK/SK、`security_token` 与 `project_id`。仓库现有文档记录的实测寿命约为 **2 小时**，过期后领取会失败。
 
-## ⚠️ 凭据 2 小时过期（先看这条）
-
-控制面接口用的是华为云**临时 AK/SK + security_token + project_id**，实测 **约 2 小时有效**。
-过期后签到会失败并明确提示：
-
-```text
-控制面凭据已失效（临时 AK/SK 约 2 小时过期）——请重新从客户端/控制台导入一次
-```
-
-这**是上游的凭据寿命，不是脚本限制** —— 上游自己也只发这种临时凭据。
-
-| 凭据 | 寿命 | 用途 | 本工具能否读取 |
+| 凭据 | 寿命 | 用途 | 本工具能否从桌面端直接读取 |
 | :--- | :--- | :--- | :--- |
-| 网关 Basic（`model_app_key:model_app_secret`） | **不过期** | 模型转发 | ✅ `officeace_get_token.py` 可读 |
-| 控制面临时 AK/SK + STS + project_id | **约 2 小时** | 额度 / 签到 | ❌ 不落盘，需另外导入 |
+| 网关 Basic（`model_app_key:model_app_secret`） | 不过期 | 模型转发 | ✅ `officeace_get_token.py` 可读 |
+| 控制面临时 AK/SK + STS + `project_id` | 约 2 小时 | 额度查询与签到 | ❌ 不在该桌面配置中 |
 
-> 需要长期无人值守时，建议在本机按 2 小时节奏刷新凭据后写入青龙环境变量；
-> 脚本本身就是一次性调用，不需要常驻进程。
+> [!IMPORTANT]
+> 网关 Basic 凭据不能单独完成签到。长期无人值守时，需要在脚本外部按上游实际有效期刷新控制面凭据并更新环境变量。
 
----
+## 🔑 获取凭据
 
-## 🚀 部署方式一：青龙面板（三步）
+### 读取本机客户端配置
 
-| 步骤 | 做什么 |
-| :--- | :--- |
-| **1️⃣ 上传脚本** | 把 `officeace_daily.py` 放到脚本目录 |
-| **2️⃣ 配置变量** | 环境变量里添加 `OFFICEACE_TOKENS`（见下方格式） |
-| **3️⃣ 建定时任务** | 命令填 `task officeace_daily.py`，建议 cron `10 9 * * *` |
-
-> 🐧 **命令必须用青龙运行器**：定时任务里从脚本列表选 `officeace_daily.py`（生成 `task xxx.py`），
-> 不要填裸 `python officeace_daily.py` —— 裸调用不会注入面板环境变量。
-
-```
-# 多账号：每条一行，`备注|AK|SK|security_token|project_id|base_url`
-OFFICEACE_TOKENS=主号|AKxxxx|SKxxxx|STxxxx|项目ID|https://modelgw-xxxx.cn-southwest-2.huaweicloud-agentarts.com/v2
-副号|AKyyyy|SKyyyy|STyyyy|项目ID|https://modelgw-yyyy.cn-southwest-2.huaweicloud-agentarts.com/v2
+```bash
+python officeace_get_token.py
+python officeace_get_token.py --list
+python officeace_get_token.py --json
+python officeace_get_token.py --path <文件或目录>
 ```
 
----
+工具默认搜索：
 
-## ☁️ 部署方式二：GitHub Actions（零服务器）
+```text
+~/.office-claw/.jiuwenclaw/config/routing_state/users/<账号ID>/models.json
+```
 
-### 第 1 步：添加 Secrets（仓库 → Settings → Secrets and variables → Actions）
+它兼容两种网关凭据写法：
 
-| Secret | 对应环境变量 | 必填 | 说明 |
+- `api_key` 直接存储 `key:secret`。
+- 凭据位于 `custom_headers` 的 `Authorization: Basic ...`。
+
+工具能输出网关基址、Basic key 与 secret；控制面 STS 与 `project_id` 需要从客户端或控制台的临时凭据流程另外获取。
+
+### 多账号格式
+
+```text
+备注|AK_VALUE|SK_VALUE|STS_VALUE|PROJECT_ID|https://modelgw-xxxx.cn-southwest-2.huaweicloud-agentarts.com/v2
+副号|AK_VALUE|SK_VALUE|STS_VALUE|PROJECT_ID|https://modelgw-yyyy.cn-southwest-2.huaweicloud-agentarts.com/v2
+```
+
+也可以省略备注，直接使用五段格式：
+
+```text
+AK_VALUE|SK_VALUE|STS_VALUE|PROJECT_ID|https://modelgw-xxxx.cn-southwest-2.huaweicloud-agentarts.com/v2
+```
+
+脚本至少要求 AK、SK 与 `base_url` 存在；STS 与 `project_id` 是否必须由上游当前接口决定，签到前应先用 `--query` 核对。
+
+## 🚀 青龙面板
+
+1. 将 `officeace_daily.py` 上传到青龙脚本目录。
+2. 在环境变量中添加 `OFFICEACE_TOKENS`。
+3. 新建定时任务，从脚本列表生成：
+
+   ```bash
+   task officeace_daily.py
+   ```
+
+建议 cron：
+
+```cron
+10 9 * * *
+```
+
+青龙按面板本地时间解释 cron。使用裸 `python` 启动时，面板环境变量不一定会注入；定时任务优先使用青龙运行器。
+
+## 🚀 GitHub Actions
+
+仓库内置 [`.github/workflows/daily.yml`](.github/workflows/daily.yml)，当前 `schedule:` 默认注释，只保留 `workflow_dispatch` 手动触发。
+
+| Secret | 对应变量 | 必填 | 说明 |
 | :--- | :--- | :---: | :--- |
-| `OFFICEACE_TOKENS` | `OFFICEACE_TOKENS` | ✅ | 多账号凭据（同上格式） |
-| `QYWX_TOKEN` | `QYWX_TOKEN` | ⬜ | 企业微信机器人 key |
-| `PLUSPLUS_TOKEN` | `PLUSPLUS_TOKEN` | ⬜ | PushPlus token |
+| `OFFICEACE_TOKENS` | `OFFICEACE_TOKENS` | ✅ | 多账号临时控制面凭据。 |
+| `QYWX_TOKEN` | `QYWX_TOKEN` | ➖ | 企业微信机器人 key。 |
+| `PLUSPLUS_TOKEN` | `PLUSPLUS_TOKEN` | ➖ | PushPlus token。 |
 
-### 第 2 步：开启 Actions
+进入 **Actions → OfficeAce Daily → Run workflow** 手动验证。需要定时时，自行取消工作流中的两行注释：
 
-仓库 → **Actions** → 选择 **OfficeAce Daily** → **Enable workflow**。
-
-### 第 3 步：手动跑一次验证
-
-**Actions** → **OfficeAce Daily** → **Run workflow**（默认仅手动触发；工作流里 `schedule:` 两行取消注释即可开启定时）。
-
----
-
-## 🔑 本机凭据读取工具
-
-桌面端登录后，配置就落在本机，不用手抄：
-
-```bash
-python officeace_get_token.py            # 读取并打印 BASE_URL / AK / SK
-python officeace_get_token.py --list     # 只列出找到的账号配置
-python officeace_get_token.py --json     # 机器可读输出
-python officeace_get_token.py --path <文件或目录>   # 指定位置
+```yaml
+schedule:
+  - cron: '10 1 * * *'
 ```
 
-默认搜索 `~/.office-claw/.jiuwenclaw/config/routing_state/users/<账号ID>/models.json`，并自动兼容两种写法：
-`api_key` 直接是 `key:secret`，或凭据藏在 `custom_headers` 的 `Authorization: Basic …` 里。
-
-| 能取到 | 取不到 |
-| :--- | :--- |
-| ✅ `api_base`（网关基址） | ❌ 控制面临时 AK/SK/STS |
-| ✅ 网关 Basic 凭据（key/secret） | ❌ `project_id` |
-
-> 签到用的控制面凭据是 OAuth 换来的临时凭据、**不在这份配置里**，仍需从客户端/控制台另外导入（约 2 小时过期）。
-> 本工具解决的是「网关基址和 Basic 凭什么写」这一步 —— 那也最容易抄错。
-
----
-
-## ⌨️ 命令行参数
-
-| 参数 | 作用 |
-| :--- | :--- |
-| （无） | 所有账号领取每日奖励 |
-| `--only N` | 只跑第 N 个账号（从 1 起） |
-| `--query` | **只读**查询积分与奖励活动，不发起领取 |
-| `--no-notify` / `NO_NOTIFY=1` | 只打印，不推送 |
-
-```bash
-python officeace_daily.py             # 全量领取
-python officeace_daily.py --only 1    # 单账号
-python officeace_daily.py --query     # 只读核对
-```
-
----
+`10 1 * * *` 使用 UTC，对应北京时间每天 09:10。由于控制面凭据大约 2 小时失效，Actions 定时执行前必须确保证书 Secret 仍然有效；仅配置长期 Basic 凭据不会让签到自动变得可运行。
 
 ## 🔧 环境变量
 
 | 变量 | 必填 | 说明 |
 | :--- | :---: | :--- |
-| `OFFICEACE_TOKENS` | ✅ | 多账号，换行或 `&` 分隔；每条 `AK\|SK\|security_token\|project_id\|base_url`，可在最前加备注 |
-| `OFFICEACE_AK` | ➖ | 单账号兜底：Access Key |
-| `OFFICEACE_SK` | ➖ | 单账号兜底：Secret Key |
-| `OFFICEACE_STS` | ➖ | 单账号兜底：security_token（视上游而定，可为空） |
-| `OFFICEACE_PROJECT_ID` | ➖ | 单账号兜底：project_id |
-| `OFFICEACE_BASE_URL` | ➖ | 单账号兜底：网关基址（形如 `https://host/v2`） |
-| `OFFICEACE_CLIENT_DIR` | ➖ | 本机凭据读取工具的搜索根目录 |
-| `QYWX_TOKEN` | ➖ | 企业微信机器人 key（也兼容 `WECHAT_WEBHOOK`） |
-| `PLUSPLUS_TOKEN` | ➖ | PushPlus token |
-| `NO_NOTIFY` | ➖ | 设 `1` 关闭推送 |
+| `OFFICEACE_TOKENS` | 多账号 ✅ | 多账号，换行或 `&` 分隔；每条五段或六段。 |
+| `OFFICEACE_AK` | ➖ | 单账号兜底 Access Key。 |
+| `OFFICEACE_SK` | ➖ | 单账号兜底 Secret Key。 |
+| `OFFICEACE_STS` | ➖ | 单账号兜底 `security_token`。 |
+| `OFFICEACE_PROJECT_ID` | ➖ | 单账号兜底 `project_id`。 |
+| `OFFICEACE_BASE_URL` | ➖ | 单账号兜底网关基址，通常以 `/v2` 结尾。 |
+| `OFFICEACE_CLIENT_DIR` | ➖ | 本机凭据读取工具的搜索根目录。 |
+| `QYWX_TOKEN` | ➖ | 企业微信机器人 key；也兼容 `WECHAT_WEBHOOK`。 |
+| `PLUSPLUS_TOKEN` | ➖ | PushPlus token。 |
+| `NO_NOTIFY` | ➖ | 设为 `1` 关闭推送。 |
 
----
+`OFFICEACE_TOKENS` 非空时优先于单账号变量。
 
-## 🧪 验证情况
+## ⌨️ 命令行参数
+
+| 参数 | 作用 |
+| :--- | :--- |
+| （无） | 为全部账号执行领取。 |
+| `--only N` | 只运行第 N 个账号。 |
+| `--query` | 只读查询当前额度，不发起领取。 |
+
+关闭推送使用环境变量 `NO_NOTIFY=1`。
+
+凭据读取工具的独立参数：
+
+| 参数 | 作用 |
+| :--- | :--- |
+| `--path PATH` | 指定 `models.json`、所在目录或搜索根目录。 |
+| `--list` | 只列出找到的配置文件。 |
+| `--json` | 输出机器可读 JSON。 |
+
+## 🧪 验证范围
 
 | 项目 | 结果 |
 | :--- | :--- |
-| 签名对拍 | 官方 **6 个签名向量**（SDK / V11、含转义路径与查询排序、V11 派生密钥按小写十六进制字符串参与 HMAC）**逐字节一致** |
-| 领取增量 | 按 `current_value` 差值，自测 +50 场景通过 |
-| 幂等 | 重复领取返回「今天没有可领的奖励（或已领过）」 |
-| 凭据过期 | 明确提示「约 2 小时过期，请重新导入」 |
-| 多账号 / 脱敏 / GBK 控制台 | 均通过 |
+| 签名对拍 | 6 个官方签名向量逐字节一致，覆盖 SDK / V11、转义路径与查询排序。 |
+| 领取增量 | 按 `current_value` 差值计算，离线场景验证了 `+50`。 |
+| 幂等 | 重复领取返回今日无可领奖励或已领过。 |
+| 临时凭据过期 | 输出明确提示，要求重新导入约 2 小时有效期的控制面凭据。 |
+| 多账号与脱敏 | 离线检查通过。 |
 
-> ⚠️ 诚实边界：签名与流程是**按官方算法与真实向量对拍**验证的，但**没有用真实账号联网跑过**——
-> 上游凭据每 2 小时过期，首次使用请先用 `--query` 只读核对一次。
+> [!NOTE]
+> 签名和领取流程已按官方算法与真实向量对拍，但仓库没有提供“真实账号联网领取成功”的证据。首次使用应先运行 `--query`，核对凭据、基址与订阅接口，再执行领取。
 
----
-
-## 🗂️ 数据文件说明
-
-脚本**不落盘任何凭据**：
-
-- 所有凭据只从环境变量读取，运行时在内存中使用，不写文件；
-- `officeace_get_token.py` 只**读**本机配置并打印，不写任何缓存；
-- `.gitignore` 已屏蔽 `officeace_tokens.json` / `officeace_result.json` 等潜在运行时文件。
-
----
-
-## 📊 推送报告示例
+## 🔁 领取与成功语义
 
 ```text
-🏢 OfficeAce 果办每日签到
-✅ 账号1 主号：领取成功：+100 积分（奖励额度合计 150）
-✅ 账号2 副号：今天没有可领的奖励（或已领过）
-🕐 2026-10-13 09:10
+GET  /v1/subscription             # 领取前基线
+POST /v1/subscription/bonus/claim # 回执用于增量核对
 ```
 
----
+- 每日签到与一次性新人礼由服务端同一次动作下发。
+- 当天已领取时按幂等处理，不重复计分。
+- 能读取领取前基线且 claim 回执包含最新额度时，报告实际增量。
+- 领取前读数失败时，脚本仍会尝试 claim，并在输出中明确“已签到”而不是编造新增数字。
+- 单个账号异常不会阻止其余账号继续执行。
 
-## 📁 目录结构
+## 🗂️ 数据文件
 
-```text
-OfficeAce-Daily/
-├── officeace_daily.py          # 每日签到（内置 V11 签名，单文件自包含）
-├── officeace_get_token.py      # 本机凭据读取工具
-├── requirements.txt            # 依赖说明（实际零第三方依赖）
-├── README.md
-├── CHANGELOG.md
-├── LICENSE
-├── .gitignore
-├── assets/                     # 收款码等素材
-└── .github/workflows/daily.yml # Actions 工作流（默认手动触发）
-```
+脚本不落盘控制面凭据。`officeace_get_token.py` 只读取本机 `models.json` 并输出，不写缓存。
 
----
-
-## 📦 版本与发布
-
-- 每次更新单独发一个 Release：`v1.0.0` → `v1.1.0` …，历史版本保留可下载；
-- 每个 Release 附：完整包 zip + 各脚本单文件 + `SHA256SUMS.txt`；
-- 下载页：<https://github.com/L0NE-6/OfficeAce-Daily/releases>
-
----
+| 文件 | 说明 | 是否提交 |
+| :--- | :--- | :---: |
+| `officeace_tokens.json` | 潜在运行时凭据文件 | ❌ 已忽略 |
+| `officeace_result.json` | 潜在运行结果文件 | ❌ 已忽略 |
+| `storage.json` / `*accounts*.json` | 本地账号数据 | ❌ 已忽略 |
+| `*.log` | 运行日志 | ❌ 已忽略 |
 
 ## 🔒 隐私说明
 
-脚本**不含任何账号、AK/SK、Cookie 或设备信息**，所有凭据均由环境变量（或 GitHub Secrets）注入。
-日志只打印 AK 的**前 4 位与后 4 位**，不会输出完整凭据。
+- 仓库不包含真实 AK、SK、STS、`project_id`、账号或手机号。
+- 凭据只从环境变量读取，运行时在内存中使用。
+- 日志只展示 AK 的前 4 位与后 4 位。
+- 不要把 `OFFICEACE_TOKENS`、临时 STS、完整 `models.json` 或未脱敏日志提交到仓库、Issue 或公开 Actions 日志。
 
----
+## ❓ 常见问题
+
+<details>
+<summary><b>为什么能读取 Basic 凭据，签到仍然失败</b></summary>
+
+桌面配置中的 Basic 凭据用于模型网关转发，控制面签到还需要临时 AK/SK、STS 与 `project_id`。这两组凭据用途不同，不能互换。
+</details>
+
+<details>
+<summary><b>为什么约 2 小时后失效</b></summary>
+
+控制面使用上游签发的临时凭据。脚本不会刷新 OAuth 或 STS 生命周期，因此需要在外部重新获取并更新环境变量。
+</details>
+
+<details>
+<summary><b>如何先做只读核对</b></summary>
+
+```bash
+python officeace_daily.py --query
+```
+
+该命令只读取订阅，不执行 claim。确认基址与额度正常后再运行无参数命令。
+</details>
+
+<details>
+<summary><b>Actions 为什么默认不自动运行</b></summary>
+
+上游仓库将 `schedule:` 保持在注释状态，避免在没有有效临时凭据时空跑。Fork 后如需定时，应取消注释并提供可用的 `OFFICEACE_TOKENS`。
+</details>
+
+<details>
+<summary><b>如何关闭通知</b></summary>
+
+设置环境变量 `NO_NOTIFY=1`。当前脚本通过该环境变量关闭推送，不需要额外命令行开关。
+</details>
+
+## 📦 版本与发布
+
+- 当前版本：`v1.2.0`。
+- 历史版本保留在 [Releases](https://github.com/L0NE-6/OfficeAce-Daily/releases)。
+- 更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## ⚠️ 免责声明
 
-本项目仅供 **学习与个人自动化** 使用。请遵守 OfficeAce / 华为云的服务条款，使用风险自负。
+本项目用于个人学习与自动化实践。请遵守 OfficeAce、OfficeClaw、华为云及相关服务条款，并自行承担账号与服务使用风险。
 
----
+## ☕ 支持与反馈
 
-## ☕ 支持与投喂
+遇到问题、发现上游签名或凭据流程变化，欢迎提交 [Issue](https://github.com/L0NE-6/OfficeAce-Daily/issues)。请附上脱敏日志、复现步骤、运行环境和已核对的时间窗口；代码改进可通过 [Pull Request](https://github.com/L0NE-6/OfficeAce-Daily/pulls) 提交。
 
-脚本是**完全免费、无广告、无任何功能限制**的（本仓库与发布包也不含你的任何数据）。
-如果它确实帮你省了时间、多领了积分，欢迎请我喝杯咖啡 —— **纯自愿，不影响任何功能**，也不影响我在 Issue 里的响应速度 🙌
+项目免费开源。如果它节省了你的时间，可以自愿扫码支持；Star、真实运行反馈和文档修正同样重要。
 
 <p align="center">
   <img src="assets/donate-wechat.png" width="260" alt="微信赞赏码" />
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/donate-alipay.jpg" width="260" alt="支付宝收款码" />
+  <img src="assets/donate-alipay.jpg" width="260" alt="支付宝赞赏码" />
 </p>
 <p align="center"><sub>💚 微信支付（左） &nbsp;|&nbsp; 💙 支付宝（右，支持信用卡 / 花呗）</sub></p>
 
-> 💡 **不花钱也能帮上很多忙**：点个 ⭐ Star、提一个带日志的 Issue、发一个 Pull Request、或者把脚本分享给需要的朋友 —— 这些同样是最好的支持。
-
 ---
 
-## 💬 反馈与贡献
+## ✦ 星轨 Star Trail
 
-遇到问题、有功能建议，或者发现了更好的实现方式，欢迎：
+> 每颗 Star 都是尘埃落定后的亮点，记录 OfficeAce Daily 在可靠领取与透明报告之间留下的轨迹。
 
-- 提交 [Issue](https://github.com/L0NE-6/OfficeAce-Daily/issues) —— 报 bug、提需求
-- 发起 [Pull Request](https://github.com/L0NE-6/OfficeAce-Daily/pulls) —— 直接贡献代码
-
-> 提 Issue 时如果能附上**运行日志**和**复现步骤**，定位会快很多 🙏
+<a href="https://star-history.com/#L0NE-6/OfficeAce-Daily&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=L0NE-6/OfficeAce-Daily&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=L0NE-6/OfficeAce-Daily&type=Date&theme=light" />
+    <img alt="OfficeAce Daily Star Trail" src="https://api.star-history.com/svg?repos=L0NE-6/OfficeAce-Daily&type=Date&theme=light" />
+  </picture>
+</a>
 
 ---
 
 <div align="center">
-  <sub>🏢 如果这个脚本帮到你，点个 <b>Star</b> 支持一下，或者到 <a href="#-支持与投喂">支持与投喂</a> 请我喝杯咖啡 ✨</sub>
+  <a href="https://github.com/L0NE-6/OfficeAce-Daily/releases">Releases</a> ·
+  <a href="https://github.com/L0NE-6/OfficeAce-Daily/issues">Issues</a> ·
+  <a href="https://github.com/L0NE-6/OfficeAce-Daily">Star</a>
+  <br />
+  <sub>L0NE-6 · DAILY SIGNAL · 签名有据，回读有数，边界有光</sub>
 </div>
