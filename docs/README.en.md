@@ -129,6 +129,10 @@ No real-account online claim result is included in the repository evidence. For 
 
 The scripts do not persist control-plane credentials. `officeace_get_token.py` only reads local configuration. Logs show masked AK fragments. Never publish `OFFICEACE_TOKENS`, STS values, a complete `models.json`, or unredacted logs in a repository, Issue, or public Actions output.
 
+## Usage and redistribution
+
+The official repository, scripts, deployment instructions, and releases are and remain free. Without explicit written permission, do not package this project as a paid resource, paid deployment service, or paid update service; do not remove attribution and claim the work as original; do not impersonate the author; and do not use the author's identity, name, avatar, or payment QR codes to imply official endorsement. Do not repost the project through unrelated accounts, groups, channels, or paid platforms for follower growth, traffic diversion, or resale. Violations may lead to a takedown request, and the author may pause updates or archive or delete the repository. Read the full [NOTICE.md](../NOTICE.md).
+
 ## Links
 
 - [Releases](https://github.com/L0NE-6/OfficeAce-Daily/releases)

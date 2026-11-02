@@ -129,6 +129,10 @@ O repositório não inclui evidência de uma coleta online bem-sucedida em conta
 
 Os scripts não persistem credenciais do control plane. `officeace_get_token.py` apenas lê a configuração local. Os logs mostram o AK mascarado. Não publique `OFFICEACE_TOKENS`, STS, um `models.json` completo ou logs sem máscara em repositório, Issue ou saída pública do Actions.
 
+## Limites de uso e redistribuição
+
+O repositório oficial, os scripts, as instruções de implantação e as Releases permanecem gratuitos e públicos. Sem autorização escrita explícita do autor, não empacote este projeto como recurso pago, serviço de implantação paga ou serviço de atualização paga; não remova a atribuição para alegar autoria original; não se passe pelo autor; e não use a identidade, o nome, o avatar ou os QR codes de pagamento do autor para sugerir endosso oficial. Também não republique o projeto em contas, grupos, canais ou plataformas pagas sem relação com ele para ganhar seguidores, desviar tráfego ou revender. Em caso de violação, o autor pode solicitar a remoção e pode pausar atualizações, arquivar ou excluir o repositório. Consulte as regras completas em [NOTICE.md](../NOTICE.md).
+
 ## Links
 
 - [Releases](https://github.com/L0NE-6/OfficeAce-Daily/releases)

@@ -129,6 +129,10 @@ schedule:
 
 腳本不落盤控制面憑據，`officeace_get_token.py` 只讀取本機設定。日誌僅顯示 AK 遮罩片段。請勿在倉庫、Issue 或公開 Actions 輸出中貼出 `OFFICEACE_TOKENS`、STS、完整 `models.json` 或未脫敏日誌。
 
+## 使用邊界與轉載聲明
+
+官方倉庫、腳本、部署說明與 Release 均免費公開。未經作者明確書面許可，請勿將本專案包裝為付費資源、付費部署或包更新服務，請勿刪除署名後冒充原創，請勿冒充作者，亦請勿使用作者身分、名稱、頭像或收款碼製造背書假象；請勿搬運到無關帳號、群組、頻道或付費平台以漲粉、截流、轉賣或引流。違規時，作者可要求下架，並可視情況暫停更新、封存或刪除倉庫。完整規則見 [NOTICE.md](../NOTICE.md)。
+
 ## 連結
 
 - [Releases](https://github.com/L0NE-6/OfficeAce-Daily/releases)
