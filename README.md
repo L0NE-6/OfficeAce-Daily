@@ -264,7 +264,7 @@ python officeace_daily.py --query
 
 ## 📦 版本与发布
 
-- 当前版本：`v1.2.0`。
+- 当前发布版：`v1.2.1`（2026-11-04，文档发行版；脚本逻辑仍为 `v1.2.0`）。
 - 历史版本保留在 [Releases](https://github.com/L0NE-6/OfficeAce-Daily/releases)。
 - 更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
