@@ -340,9 +340,25 @@ def bonuses_of(subscription):
     return out
 
 
-def claimed_sum(subscription):
-    """已领累计：`current_value` 之和 —— 增量的正确口径。"""
-    return sum(b["used"] for b in bonuses_of(subscription))
+def subscription_readable(subscription):
+    """订阅快照必须带 bonus_skus 列表，空对象不算可核对读数。"""
+    return isinstance(subscription, dict) and isinstance(
+        subscription.get("bonus_skus"), list)
+
+
+def claimed_delta(before, after):
+    """按活动 key 只累计新增额度，避免活动增减掩盖本次有效增量。"""
+    previous = {bonus["key"]: bonus["used"] for bonus in bonuses_of(before)}
+    gained = 0.0
+    for bonus in bonuses_of(after):
+        gained += max(0.0, bonus["used"] - previous.get(bonus["key"], 0.0))
+    return gained
+
+
+def claim_reports_no_new_bonus(claim):
+    """claim 明确返回空列表时，表示当天已结算、没有新发放。"""
+    items = claim.get("bonus_skus") if isinstance(claim, dict) else None
+    return isinstance(items, list) and not items
 
 
 def quota_sum(subscription):
@@ -413,17 +429,42 @@ def _post_json(url, payload):
 def checkin(account):
     credential = Credential(account["ak"], account["sk"], account["sts"], account["project"])
     before = None
+    before_error = None
     try:
         before = fetch_subscription(credential, account["base"])
     except Exception as error:
-        log("   ⚠️ 签到前读数失败（不影响领取）：%s" % error)
-    after = claim_bonus(credential, account["base"])
-    if before is not None:
-        gained = claimed_sum(after) - claimed_sum(before)
-        if gained > 0:
-            return True, "领取成功：+%s 积分（奖励额度合计 %s）" % (int(gained), int(quota_sum(after)))
-        return True, "今天没有可领的奖励（或已领过）"
-    return True, "已签到（奖励额度合计 %s）" % int(quota_sum(after))
+        before_error = error
+        log("   ⚠️ 签到前读数失败，稍后只能标记未确认：%s" % error)
+    if before_error is None and not subscription_readable(before):
+        before_error = RuntimeError("签到前订阅缺少 bonus_skus 列表")
+
+    claim = claim_bonus(credential, account["base"])
+
+    after = None
+    after_error = None
+    try:
+        after = fetch_subscription(credential, account["base"])
+    except Exception as error:
+        after_error = error
+    if after_error is None and not subscription_readable(after):
+        after_error = RuntimeError("签到后订阅缺少 bonus_skus 列表")
+
+    if before_error is not None or after_error is not None:
+        details = []
+        if before_error is not None:
+            details.append("签到前 %s" % before_error)
+        if after_error is not None:
+            details.append("签到后 %s" % after_error)
+        return False, "领取请求已发送，但订阅回读失败，结果未确认：%s" % "；".join(details)
+
+    gained = claimed_delta(before, after)
+    if gained > 0:
+        return True, "领取成功：+%s 积分（奖励额度合计 %s）" % (
+            int(gained), int(quota_sum(after)))
+    if claim_reports_no_new_bonus(claim):
+        return True, "已领取或今日无可领奖励（订阅回读无新增，奖励额度合计 %s）" % (
+            int(quota_sum(after)))
+    return False, "领取回执含奖励条目，但订阅前后未确认新增积分"
 
 
 def main():
